@@ -14,7 +14,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.spy</groupId>
     <artifactId>spymemcached</artifactId>
-    <version>2.999.999-SNAPSHOT</version> <!-- not used -->
+    <version>2018122201</version> <!-- not used -->
 
     <name>Spymemcached</name>
     <description>A client library for memcached.</description>
@@ -85,5 +85,42 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.github</groupId>
+                <artifactId>site-maven-plugin</artifactId>
+                <version>0.12</version>
+                <configuration>
+                    <message>Maven artifacts for ${project.version}</message>
+                    <repositoryName>spymemcached</repositoryName>
+                    <repositoryOwner>ruintterra</repositoryOwner>
+                    <server>github</server>
+                    <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory>
+                    <branch>refs/heads/gh-pages</branch>
+                    <merge>true</merge>
+                    <includes>
+                        <include>**/*</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>site</goal>
+                        </goals>
+                        <phase>deploy</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <distributionManagement>
+        <repository>
+            <id>internal.repo</id>
+            <name>Temporary Staging Repository</name>
+            <url>file://${project.build.directory}/mvn-repo</url>
+        </repository>
+    </distributionManagement>
 
 </project>

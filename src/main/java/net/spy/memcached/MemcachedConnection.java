@@ -50,12 +50,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.nio.channels.CancelledKeyException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -352,7 +347,7 @@ public class MemcachedConnection extends SpyThread {
       ch.socket().setTcpNoDelay(!connectionFactory.useNagleAlgorithm());
 
       try {
-        if (ch.connect(sa)) {
+        if (ch.connect(new InetSocketAddress(((InetSocketAddress)sa).getHostName(), ((InetSocketAddress)sa).getPort()))) {
           getLogger().info("Connected to %s immediately", qa);
           connected(qa);
         } else {
@@ -366,6 +361,9 @@ public class MemcachedConnection extends SpyThread {
             || qa.getSk().interestOps() == SelectionKey.OP_CONNECT
             : "Not connected, and not wanting to connect";
       } catch (SocketException e) {
+        getLogger().warn("Socket error on initial connect", e);
+        queueReconnect(qa);
+      } catch (UnresolvedAddressException e) {
         getLogger().warn("Socket error on initial connect", e);
         queueReconnect(qa);
       }
@@ -1128,7 +1126,7 @@ public class MemcachedConnection extends SpyThread {
           ch.configureBlocking(false);
           ch.socket().setTcpNoDelay(!connectionFactory.useNagleAlgorithm());
           int ops = 0;
-          if (ch.connect(node.getSocketAddress())) {
+          if (ch.connect(new InetSocketAddress(((InetSocketAddress)node.getSocketAddress()).getHostName(), ((InetSocketAddress)node.getSocketAddress()).getPort()))) {
             connected(node);
             addedQueue.offer(node);
             getLogger().info("Immediately reconnected to %s", node);
@@ -1143,6 +1141,9 @@ public class MemcachedConnection extends SpyThread {
             node);
         }
       } catch (SocketException e) {
+        getLogger().warn("Error on reconnect", e);
+        rereQueue.add(node);
+      } catch (UnresolvedAddressException e) {
         getLogger().warn("Error on reconnect", e);
         rereQueue.add(node);
       } catch (Exception e) {
